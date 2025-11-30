@@ -1,0 +1,2 @@
+worker.Endpoints = default -p 6003 -h localhost
+server.proxy = Coordinador:default -p 9099 -h localhost

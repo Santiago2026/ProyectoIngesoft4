@@ -1,4 +1,5 @@
 rootProject.name = 'untitled'
 include 'Server'
 include 'Client'
+include 'Worker'
 

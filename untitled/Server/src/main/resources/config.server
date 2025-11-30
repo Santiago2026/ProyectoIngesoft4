@@ -1,0 +1,10 @@
+#
+# The server creates one single object adapter with the name
+# "Hello". The following line sets the endpoints for this
+# adapter.
+#
+ServiceAdapter.Endpoints=tcp -p 5000
+#
+# Only listen on the ZeroTier's LIASOn1 interface by default.
+#
+#Ice.Default.Host=192.168.131.119
