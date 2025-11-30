@@ -8,3 +8,4 @@ ServiceAdapter.Endpoints=tcp -p 5000
 # Only listen on the ZeroTier's LIASOn1 interface by default.
 #
 #Ice.Default.Host=192.168.131.119
+Ice.Default.Host=localhost

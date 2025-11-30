@@ -25,6 +25,11 @@ public class Client {
             ServicePrx service = ServicePrx.checkedCast(
                 ic.stringToProxy("service:tcp -h localhost -p 10000 -d:ice.reliability=1")
             );
+            if (service == null) {
+                throw new Error("Cliente → No se pudo obtener el proxy del Service");
+            }
+            int option = 1; // Cambia este valor para probar diferentes opciones
+
             String datagrama = "ejemplo123"; // ← Aquí va lo que quieras procesar
 
             service.solicitarCalculoAsync(datagrama, cbPrx);
