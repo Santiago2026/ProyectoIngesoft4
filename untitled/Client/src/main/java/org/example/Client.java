@@ -26,6 +26,14 @@ public class Client {
                 ic.stringToProxy("service:tcp -h localhost -p 5000")
             );
 
+            if (service == null) {
+                throw new Error("Cliente → No se pudo obtener el proxy del Service");
+            }
+            int option = 1; // Cambia este valor para probar diferentes opciones
+
+            String datagrama = "ejemplo123"; // ← Aquí va lo que quieras procesar
+
+
             for (int i = 0; i < 10; i++) {
                 service.solicitarCalculoAsync("msg" + i, cbPrx);
                 System.out.println("Enviado msg" + i);

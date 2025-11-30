@@ -11,7 +11,7 @@ public class WorkerMain {
         try (Communicator ic = Util.initialize(args)) {
             System.out.println("Worker corriendo...");
             double distanciaArcoA = 10.0; // ejemplo de distancia
-            double distanciaArcoB = 15.0; // ejemplo de distancia
+            double distanciaArcoB = 15.0; 
             Map<String, Double> distancias = Map.of(
                 "ArcoA", distanciaArcoA,
                 "ArcoB", distanciaArcoB
