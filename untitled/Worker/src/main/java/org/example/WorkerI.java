@@ -17,7 +17,8 @@ public class WorkerI implements Worker  {
     public WorkerI(Map<String, Double> distancias) {
         this.distancias = distancias;
     }
-     @Override
+
+    @Override
     public Map<String, Double> calcularVelocidadesPorArco(String chunk, Current current) {
 
         Map<String, List<Double>> acumuladoPorArco = new HashMap<>();

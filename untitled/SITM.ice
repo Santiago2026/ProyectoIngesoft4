@@ -15,4 +15,10 @@ module SITM {
         void registrarWorker(Worker* w);
         void solicitarCalculoAsync(string datagrama, ClientCallback* cb);
     };
+
+    interface QueueService {
+            void enqueue(string msg);
+            string dequeue();
+            int size();
+    };
 };

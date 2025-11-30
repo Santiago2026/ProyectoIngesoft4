@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import SITM.QueueServicePrx;
 import com.zeroc.Ice.Current;
 
 import SITM.ClientCallbackPrx;
@@ -14,6 +15,7 @@ import SITM.WorkerPrx;
 
 public class ServiceI implements Service {
 
+    private final QueueServicePrx queue;
     private List<WorkerPrx> workers = new ArrayList<>();
 
     @Override
@@ -24,12 +26,25 @@ public class ServiceI implements Service {
 
     @Override
     public void solicitarCalculoAsync(String datagrama, SITM.ClientCallbackPrx cb, Current current) {
-        // tu implementación real aquí
+
+        queue.enqueue(datagrama);
+
+        String msg = queue.dequeue();
+
+        if (workers.isEmpty()) {
+            System.err.println("Service No hay workers registrados");
+            cb.onFinished("ERROR: No hay workers disponibles");
+            return;
+        }
+
+        WorkerPrx worker = workers.get(0);
+
         System.out.println("Service → Solicitud async recibida");
     }
 
-    public ServiceI(List<WorkerPrx> workers) {
-         this.workers = workers;
+    public ServiceI(List<WorkerPrx> workers, QueueServicePrx queue) {
+        this.queue= queue;
+        this.workers = workers;
      }
 
 //     @Override
