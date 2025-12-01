@@ -5,7 +5,7 @@ plugins {
 
 group = 'org.example'
 version = 'unspecified'
-mainClassName = 'org.example.Worker'
+mainClassName = 'org.example.WorkerMain'
 
 repositories {
     mavenCentral()
@@ -21,14 +21,11 @@ test {
 }
 
 jar {
-    //tu clase main con package completo para que se reconozca el jar
     manifest {
         attributes(
             'Main-Class': mainClassName
         )
     }
-    from sourceSets.main.output
-    // Incluye todas las dependencias en el JAR (opcional pero recomendable)
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }

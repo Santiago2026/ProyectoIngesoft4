@@ -1,2 +1,5 @@
-worker.Endpoints = default -p 6003 -h localhost
-server.proxy = Coordinador:default -p 9099 -h localhost
+# Nombre del adapter del worker con puerto y host
+WorkerAdapter.Endpoints=tcp -p 6003 -h localhost
+
+# Proxy del server para conectarse
+server.proxy=service:ServiceAdapter -p 5000 -h localhost

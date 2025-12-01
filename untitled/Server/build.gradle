@@ -20,7 +20,6 @@ test {
     useJUnitPlatform()
 }
 jar {
-    //tu clase main con package completo para que se reconozca el jar
     manifest {
         attributes(
             'Main-Class': mainClassName

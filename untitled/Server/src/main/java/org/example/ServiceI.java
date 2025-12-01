@@ -28,17 +28,18 @@ public class ServiceI implements Service {
         System.out.println("Service → Worker registrado: " + w);
         workers.add(w);
     }
-
+    
+    @Override
     public void solicitarCalculoAsync(String datagrama, ClientCallbackPrx cb, Current current) {
-    System.out.println("Service → Solicitud async recibida");
+        System.out.println("Service → Solicitud async recibida");
 
-    if (workers.isEmpty()) {
-        System.out.println("No hay workers registrados!");
-        cb.onFinished("{}");
-        return;
-    }
+        if (workers.isEmpty()) {
+            System.out.println("No hay workers registrados!");
+            cb.onFinished("{}");
+            return;
+        }
 
-    List<String> partes = dividirDatasetPorWorkers(datagrama, workers.size());
+        List<String> partes = dividirDatasetPorWorkers(datagrama, workers.size());
         List<Map<String, Double>> resultadosParciales = new ArrayList<>();
 
         for (int i = 0; i < partes.size(); i++) {
@@ -138,7 +139,7 @@ public class ServiceI implements Service {
     // Guarda los arcos generados en un archivo CSV
     private void guardarArcosCSV(File file) {
         try (PrintWriter pw = new PrintWriter(file)) {
-            pw.println("from,to,distace"); // header
+            pw.println("lineId,from,to,distance"); // header
             for (String arc : arcs) {
                 pw.println(arc);
             }
@@ -215,14 +216,15 @@ public class ServiceI implements Service {
             for (int i = 0; i < lista.size() - 1; i++) {
                 int from = lista.get(i);
                 int to = lista.get(i + 1);
-
+                int lineId = entry.getKey();
                 double[] sf = stops.get(from);
                 double[] st = stops.get(to);
+
 
                 if (sf != null && st != null && sf != st) {
                     double dist = distanciaHaversine(sf[0], sf[1], st[0], st[1]);
 
-                    arcs.add(from + "," + to + "," + dist);
+                    arcs.add(lineId +","+from + "," + to + "," + dist);
                 }
             }
         }

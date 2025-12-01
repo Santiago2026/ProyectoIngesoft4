@@ -14,9 +14,9 @@ public class WorkerI implements Worker  {
 
     private final Map<String, Double> distancias;
 
-    public WorkerI(Map<String, Double> distancias) {
-        this.distancias = distancias;
-    }
+        public WorkerI(Map<String, Double> distancias) {
+            this.distancias = distancias;
+        }
      @Override
     public Map<String, Double> calcularVelocidadesPorArco(String chunk, Current current) {
 
