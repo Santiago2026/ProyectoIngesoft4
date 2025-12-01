@@ -58,11 +58,46 @@ public class ServiceI implements Service {
 
         long start = System.currentTimeMillis();
 
-        // Cargar datagrama del archivo específico
-        List<String> datagrama = cargarDatagramas(dataFile);
+        // Obtener la ruta del archivo
+        File fConfig = new File("config.server");
+        Properties config = new Properties();
+        try (FileInputStream fis = new FileInputStream(fConfig)) {
+            config.load(fis);
+        } catch (IOException e) {
+            System.out.println("ERROR cargando configuración: " + e.getMessage());
+            return;
+        }
+        String dataDir = config.getProperty("ServiceAdapter.DataDir", ".");
+        File file = new File(dataDir, dataFile);
+        System.out.println("Buscando CSV en: " + file.getAbsolutePath());
 
-        // Dividir datagramas por número de workers
-        List<String[]> partes = dividirDatasetPorWorkers(datagrama, workers.size());
+        int bloqueSize = 10000; // filas por bloque
+        List<String> bloque = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                bloque.add(line.trim());
+                if (bloque.size() >= bloqueSize) {
+                    procesarBloque(bloque, cb); // enviamos bloque a los workers
+                    bloque.clear();
+                }
+            }
+            if (!bloque.isEmpty()) {
+                procesarBloque(bloque, cb);
+                bloque.clear();
+            }
+        } catch (Exception e) {
+            System.out.println("ERROR procesando datagramas: " + e.getMessage());
+        }
+
+        long end = System.currentTimeMillis();
+        System.out.println("Tiempo total de ejecución de " + dataFile + ": " + (end - start) + " ms");
+    }
+
+    private void procesarBloque(List<String> bloque, ClientCallbackPrx cb) {
+        // Dividir bloque entre workers
+        List<String[]> partes = dividirDatasetPorWorkers(bloque, workers.size());
         List<Map<String, Double>> resultadosParciales = Collections.synchronizedList(new ArrayList<>());
         List<Thread> hilos = new ArrayList<>();
 
@@ -82,7 +117,6 @@ public class ServiceI implements Service {
             t.start();
         }
 
-        // Esperar a que terminen todos los threads
         for (Thread t : hilos) {
             try { t.join(); } catch (InterruptedException e) { e.printStackTrace(); }
         }
@@ -91,10 +125,9 @@ public class ServiceI implements Service {
         Map<String, Double> resultadoFinal = combinarVelocidades(resultadosParciales);
         cb.onFinished(serializarResultado(resultadoFinal));
 
-        long end = System.currentTimeMillis();
-        System.out.println("Tiempo total de ejecución de " + dataFile + ": " + (end - start) + " ms");
-
-        System.gc();
+        // Limpiar listas para liberar memoria
+        partes.clear();
+        resultadosParciales.clear();
     }
 
 
