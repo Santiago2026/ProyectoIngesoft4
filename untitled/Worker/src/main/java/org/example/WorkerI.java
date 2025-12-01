@@ -14,78 +14,115 @@ import SITM.Worker;
 public class WorkerI implements Worker {
 
     private final Map<String, ArcoData> arcoInfo;
-    
-    private final String ARC_FILE = "arcos.csv";
-    private List<String> arcs = new ArrayList<>();
 
-
-    public WorkerI(Map<String, Double> distancias) {
-        this.distancias = distancias;
+    public WorkerI() {
+        this.arcoInfo = new HashMap<>(); 
+        loadArcs("arcos.csv");
+        System.out.println(">> WorkerI inicializado. Arcos cargados para " + arcoInfo.size() + " arcos.");
     }
 
-    private void loadEdgeCSV() {
-        File file = new File(ARC_FILE);
+    private void loadArcs(String arcFile) {
+        File file = new File(arcFile);
+
+        if (!file.exists()) {
+            System.err.println("ERROR: Archivo de arcos no encontrado");
+            return;
+        }
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line = br.readLine(); // header
-
-            arcs.clear();
+            br.readLine(); 
+            String line;
+            
             while ((line = br.readLine()) != null) {
-                arcs.add(line.trim()); // Cada línea representa un arco y su distancia
+                String[] partes = line.split(",");
+                if (partes.length < 4) continue;
+    
+                String paradaFromId = partes[0].trim();
+                String paradaToId = partes[1].trim();
+                double distancia = Double.parseDouble(partes[2].trim());
+                String lineId = partes[3].trim();
+                
+                String claveBusqueda = lineId + "," + paradaToId;
+
+                ArcoData data = new ArcoData(paradaFromId, distancia);
+                arcoInfo.put(claveBusqueda, data);
             }
         } catch (Exception e) {
-            System.out.println("ERROR cargando arcos: " + e.getMessage());
+            System.err.println("ERROR durante la carga de arcos en WorkerI: " + e.getMessage());
         }
     }
 
     @Override
-    public long calcularVelocidadesPorArco(String[] datagramas, Current current) {
+    public Map<String, Double> calcularVelocidadesPorArco(String[] datagramas, Current current) {
 
         long startTime = System.nanoTime();
+
         Map<String, Long> tiemposPorParadaYLinea = new HashMap<>();
 
-        Map<String, List<Double>> acumuladoPorArco = new HashMap<>();
-        
-        //Ver linea por linea 
-        //selecciona la primer linea y busca lineId sean igual y la parada, mira su secuencia, 
-        // Busca la secuencia -1 en la misma linea
-        // distancia / (tiempo - tiempo)
-        // Lista resultado
-        //enviar lista al server
-
-        for (String linea : datagramas) {
-            if (linea.trim().isEmpty()) continue;
-
-            // Suponiendo formato CSV: arco,bus,tiempoEntrada,tiempoSalida
+        for (String linea : datagramas) { 
             String[] partes = linea.split(",");
-            if (partes.length < 4) continue;
+            if (partes.length >= 3) {
+                String paradaId = partes[0].trim();
+                String lineId = partes[1].trim();
+                long tiempo = Long.parseLong(partes[2].trim());
+                tiemposPorParadaYLinea.put(paradaId + "," + lineId, tiempo);
+            }
+        }
+        
+        Map<String, List<Double>> acumuladoVelocidades = new HashMap<>();
 
-            String arco = partes[0].trim();
-            long entrada = Long.parseLong(partes[2].trim());
-            long salida  = Long.parseLong(partes[3].trim());
+        for (String lineaActual : datagramas) { 
+            
+            String[] partesTo = lineaActual.split(",");
+            if (partesTo.length < 3) continue;
 
-            if (salida <= entrada) continue;
+            String paradaToId = partesTo[0].trim();
+            String lineId = partesTo[1].trim();
+            long tiempoTo = Long.parseLong(partesTo[2].trim());
 
-            double distancia = distancias.getOrDefault(arco, 0.0);
-            if (distancia == 0) continue;
+            String arcoKey = lineId + "," + paradaToId;
+            ArcoData arcoData = arcoInfo.get(arcoKey);
+            
+            if (arcoData != null) {
+                
+                String paradaFromId = arcoData.paradaFromId; 
+                double distancia = arcoData.distancia;       
 
-            double tiempoHoras = (salida - entrada) / 3600.0;
-            double velocidad = distancia / tiempoHoras;
+                String keyFrom = paradaFromId + "," + lineId;
+                
+                if (tiemposPorParadaYLinea.containsKey(keyFrom)) {
+                    long tiempoFrom = tiemposPorParadaYLinea.get(keyFrom);
+ 
+                    long diffSegundos = tiempoTo - tiempoFrom;
 
-            acumuladoPorArco
-                .computeIfAbsent(arco, k -> new ArrayList<>())
-                .add(velocidad);
+                    if (diffSegundos > 0) {
+                        double diffHoras = (double)diffSegundos / 3600.0;
+                        double velocidad = distancia / diffHoras; 
+
+                        String arco = paradaFromId + "-" + paradaToId;
+                        acumuladoVelocidades
+                            .computeIfAbsent(arco, k -> new ArrayList<>())
+                            .add(velocidad);
+                    }
+                }
+            }
         }
 
-        Map<String, Double> resultado = new HashMap<>();
-        for (String arco : acumuladoPorArco.keySet()) {
-            List<Double> velocidades = acumuladoPorArco.get(arco);
-            double promedio = velocidades.stream().mapToDouble(Double::doubleValue).average().orElse(0);
-            resultado.put(arco, promedio);
+        Map<String, Double> promediosFinales = new HashMap<>();
+        
+        for (Map.Entry<String, List<Double>> entry : acumuladoVelocidades.entrySet()) {
+            String arcoId = entry.getKey();
+            List<Double> velocidades = entry.getValue();
+            
+            double suma = 0;
+            for (double v : velocidades) {
+                suma += v;
+            }
+            double promedio = suma / velocidades.size();
+            promediosFinales.put(arcoId, promedio);
         }
 
-        long endTime = System.nanoTime();
-        return (endTime - startTime) / 1_000_000;
+        return promediosFinales;
     }
 }
 

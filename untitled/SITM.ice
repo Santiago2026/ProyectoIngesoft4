@@ -2,7 +2,7 @@ module SITM {
 
     sequence<string> StringList;
     dictionary<string, double> Velocidades;
-
+    
     interface ClientCallback {
         void onFinished(string resultado);
         void onError(string mensaje);
