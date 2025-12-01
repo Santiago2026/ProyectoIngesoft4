@@ -4,11 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import SITM.QueueServicePrx;
 import com.zeroc.Ice.Current;
@@ -40,6 +36,8 @@ public class ServiceI implements Service {
     public void solicitarCalculoAsync(ClientCallbackPrx cb, Current current) {
         System.out.println("Service → Solicitud async recibida");
 
+        long start = System.currentTimeMillis();
+
         if (workers.isEmpty()) {
             System.out.println("No hay workers registrados!");
             cb.onFinished("{}");
@@ -52,23 +50,41 @@ public class ServiceI implements Service {
         // Dividir los datagramas en partes para cada worker
         List<String[]> partes = dividirDatasetPorWorkers(datagrama, workers.size());
 
-        List<Map<String, Double>> resultadosParciales = new ArrayList<>();
+        List<Map<String, Double>> resultadosParciales = Collections.synchronizedList(new ArrayList<>());
+        List<Thread> hilos = new ArrayList<>();
 
         // Enviar cada parte a su worker correspondiente
         for (int i = 0; i < partes.size(); i++) {
+            int idx=i;
+
+            Thread t = new Thread(() -> {
+                try {
+                    WorkerPrx worker = workers.get(idx);
+                    String[] parte = partes.get(idx);
+                    Map<String, Double> parcial = worker.calcularVelocidadesPorArco(parte);
+                    resultadosParciales.add(parcial);  // synchronizedList evita problemas de concurrencia
+                } catch (Exception e) {
+                    System.out.println("Error con worker " + idx + ": " + e.getMessage());
+                }
+            });
+            hilos.add(t);
+            t.start();
+        }
+
+        for (Thread t : hilos) {
             try {
-                WorkerPrx worker = workers.get(i);
-                String[] parte = partes.get(i);  // ya es String[]
-                Map<String, Double> parcial = worker.calcularVelocidadesPorArco(parte);
-                resultadosParciales.add(parcial);
-            } catch (Exception e) {
-                System.out.println("Error con worker " + i + ": " + e.getMessage());
+                t.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
         // Combinar resultados parciales en un resultado final
         Map<String, Double> resultadoFinal = combinarVelocidades(resultadosParciales);
         cb.onFinished(serializarResultado(resultadoFinal));
+
+        long end = System.currentTimeMillis();
+        System.out.println("Tiempo total de ejecución: " + (end - start) + " ms");
     }
 
     private List<String> cargarDatagramas() {
