@@ -3,6 +3,7 @@ package org.example;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,26 +23,24 @@ public class WorkerI implements Worker {
     }
 
     private void loadArcs(String arcFile) {
-        File file = new File(arcFile);
 
-        if (!file.exists()) {
-            System.err.println("ERROR: Archivo de arcos no encontrado");
-            return;
-        }
 
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            br.readLine(); 
+        java.io.InputStream is = getClass().getClassLoader().getResourceAsStream(arcFile);
+
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+            br.readLine();
             String line;
-            
+
             while ((line = br.readLine()) != null) {
                 String[] partes = line.split(",");
                 if (partes.length < 4) continue;
-    
+
                 String paradaFromId = partes[0].trim();
                 String paradaToId = partes[1].trim();
                 double distancia = Double.parseDouble(partes[2].trim());
                 String lineId = partes[3].trim();
-                
+
                 String claveBusqueda = lineId + "," + paradaToId;
 
                 ArcoData data = new ArcoData(paradaFromId, distancia);
