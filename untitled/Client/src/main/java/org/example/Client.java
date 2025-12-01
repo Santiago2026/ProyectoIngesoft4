@@ -1,5 +1,7 @@
 package org.example;
 
+import java.util.Scanner;
+
 import com.zeroc.Ice.Communicator;
 import com.zeroc.Ice.ObjectAdapter;
 import com.zeroc.Ice.Util;
@@ -29,18 +31,27 @@ public class Client {
             if (service == null) {
                 throw new Error("Cliente → No se pudo obtener el proxy del Service");
             }
-            int option = 1; // Cambia este valor para probar diferentes opciones
 
-            String datagrama = "ejemplo123"; // ← Aquí va lo que quieras procesar
+            Scanner sc = new Scanner(System.in);
+            System.out.println("¿Desea regenerar arcos?");
+            System.out.println("0 = No");
+            System.out.println("1 = Sí (recalcular desde CSV)");
+            System.out.print("Ingrese opción: ");
+            int opcion = sc.nextInt();
 
-
-            for (int i = 0; i < 10; i++) {
-                service.solicitarCalculoAsync("msg" + i, cbPrx);
-                System.out.println("Enviado msg" + i);
+            if (opcion == 1) {
+                service.generateArcs();
+                System.out.println("Arcos regenerados desde CSV.");
             }
-
-
-
+            System.out.println("¿Desea calcular velocidad promedio?");
+            System.out.println("0 = No");
+            System.out.println("1 = Sí");
+            System.out.print("Ingrese opción: ");
+            opcion = sc.nextInt();
+            
+            if (opcion == 1) {
+                service.solicitarCalculoAsync(cbPrx);
+            }
             System.out.println("Cliente → solicitud enviada (async).");
 
             ic.waitForShutdown();

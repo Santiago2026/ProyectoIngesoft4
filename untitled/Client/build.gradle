@@ -4,6 +4,7 @@ plugins {
 
 group = 'org.example'
 version = 'unspecified'
+mainClassName = 'org.example.Client'
 
 repositories {
     mavenCentral()
@@ -16,4 +17,15 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+jar {
+    manifest {
+        attributes(
+            'Main-Class': mainClassName
+        )
+    }
+    // Incluye todas las dependencias en el JAR (opcional pero recomendable)
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }

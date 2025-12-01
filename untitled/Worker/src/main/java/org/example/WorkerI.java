@@ -1,6 +1,5 @@
 package org.example;
 
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -10,10 +9,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.zeroc.Ice.Current;
+import SITM.Worker;
 
-import SITM.*;
-
-public class WorkerI implements Worker  {
+public class WorkerI implements Worker {
 
     private final Map<String, ArcoData> arcoInfo;
     
@@ -41,7 +39,7 @@ public class WorkerI implements Worker  {
     }
 
     @Override
-    public long calcularVelocidadesPorArco(String chunk, Current current) {
+    public long calcularVelocidadesPorArco(String[] datagramas, Current current) {
 
         long startTime = System.nanoTime();
         Map<String, Long> tiemposPorParadaYLinea = new HashMap<>();
@@ -55,27 +53,20 @@ public class WorkerI implements Worker  {
         // Lista resultado
         //enviar lista al server
 
-        String[] lineas = chunk.split("\n");
-
-        for (String linea : lineas) {
+        for (String linea : datagramas) {
             if (linea.trim().isEmpty()) continue;
 
             // Suponiendo formato CSV: arco,bus,tiempoEntrada,tiempoSalida
-            // Ajusta aquí si tu estructura no es esta
             String[] partes = linea.split(",");
-
             if (partes.length < 4) continue;
 
             String arco = partes[0].trim();
             long entrada = Long.parseLong(partes[2].trim());
             long salida  = Long.parseLong(partes[3].trim());
 
-            // Evitar tiempos inválidos
             if (salida <= entrada) continue;
 
-            // Distancia del arco
             double distancia = distancias.getOrDefault(arco, 0.0);
-
             if (distancia == 0) continue;
 
             double tiempoHoras = (salida - entrada) / 3600.0;
@@ -86,15 +77,10 @@ public class WorkerI implements Worker  {
                 .add(velocidad);
         }
 
-        // Sacar promedio por arco
         Map<String, Double> resultado = new HashMap<>();
-
         for (String arco : acumuladoPorArco.keySet()) {
             List<Double> velocidades = acumuladoPorArco.get(arco);
-            double promedio = velocidades.stream()
-                    .mapToDouble(Double::doubleValue)
-                    .average()
-                    .orElse(0);
+            double promedio = velocidades.stream().mapToDouble(Double::doubleValue).average().orElse(0);
             resultado.put(arco, promedio);
         }
 

@@ -31,31 +31,34 @@ public class ServiceI implements Service {
         workers.add(w);
     }
 
-
-
     public ServiceI(List<WorkerPrx> workers, QueueServicePrx queue) {
         this.queue = queue;
         this.workers = workers;
     }
 
+    @Override
+    public void solicitarCalculoAsync(ClientCallbackPrx cb, Current current) {
+        System.out.println("Service → Solicitud async recibida");
 
-    public void solicitarCalculoAsync(String datagrama, ClientCallbackPrx cb, Current current) {
-    System.out.println("Service → Solicitud async recibida");
+        if (workers.isEmpty()) {
+            System.out.println("No hay workers registrados!");
+            cb.onFinished("{}");
+            return;
+        }
 
-    if (workers.isEmpty()) {
-        System.out.println("No hay workers registrados!");
-        cb.onFinished("{}");
-        return;
-    }
+        // Cargar datagramas desde CSV
+        List<String> datagrama = cargarDatagramas();
 
-    List<String> partes = dividirDatasetPorWorkers(datagrama, workers.size());
+        // Dividir los datagramas en partes para cada worker
+        List<String[]> partes = dividirDatasetPorWorkers(datagrama, workers.size());
+
         List<Map<String, Double>> resultadosParciales = new ArrayList<>();
 
+        // Enviar cada parte a su worker correspondiente
         for (int i = 0; i < partes.size(); i++) {
             try {
                 WorkerPrx worker = workers.get(i);
-                String parte = partes.get(i);
-                // Worker procesa su parte y devuelve un mapa <arco, velocidad>
+                String[] parte = partes.get(i);  // ya es String[]
                 Map<String, Double> parcial = worker.calcularVelocidadesPorArco(parte);
                 resultadosParciales.add(parcial);
             } catch (Exception e) {
@@ -68,17 +71,29 @@ public class ServiceI implements Service {
         cb.onFinished(serializarResultado(resultadoFinal));
     }
 
+    private List<String> cargarDatagramas() {
+        List<String> res = new ArrayList<>(); 
+        try (BufferedReader br = new BufferedReader(new FileReader("datagramas.csv"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                res.add(line.trim());
+            }
+        } catch (Exception e) {
+            System.out.println("ERROR cargando datagramas: " + e.getMessage());
+        }
+        return res;
+    }
 
-    private List<String> dividirDatasetPorWorkers(String dataset, int numWorkers) {
-        String[] lineas = dataset.split("\n");
-        int total = lineas.length;
+
+    private List<String[]> dividirDatasetPorWorkers(List<String> dataset, int numWorkers) {
+        int total = dataset.size();
         int chunkSize = (int) Math.ceil((double) total / numWorkers);
 
-        List<String> partes = new ArrayList<>();
+        List<String[]> partes = new ArrayList<>();
         for (int i = 0; i < total; i += chunkSize) {
             int fin = Math.min(i + chunkSize, total);
-            String chunk = String.join("\n", Arrays.copyOfRange(lineas, i, fin));
-            partes.add(chunk);
+            List<String> sublist = dataset.subList(i, fin);
+            partes.add(sublist.toArray(new String[0])); // <-- ya es String[]
         }
         return partes;
     }
@@ -149,7 +164,7 @@ public class ServiceI implements Service {
     // Guarda los arcos generados en un archivo CSV
     private void guardarArcosCSV(File file) {
         try (PrintWriter pw = new PrintWriter(file)) {
-            pw.println("from,to,distace"); // header
+            pw.println("lineId,from,to,distance"); // header
             for (String arc : arcs) {
                 pw.println(arc);
             }
@@ -226,14 +241,15 @@ public class ServiceI implements Service {
             for (int i = 0; i < lista.size() - 1; i++) {
                 int from = lista.get(i);
                 int to = lista.get(i + 1);
-
+                int lineId = entry.getKey();
                 double[] sf = stops.get(from);
                 double[] st = stops.get(to);
+
 
                 if (sf != null && st != null && sf != st) {
                     double dist = distanciaHaversine(sf[0], sf[1], st[0], st[1]);
 
-                    arcs.add(from + "," + to + "," + dist);
+                    arcs.add(lineId +","+from + "," + to + "," + dist);
                 }
             }
         }
