@@ -26,11 +26,11 @@ public class Server {
             }
 
             ObjectAdapter adapter = ic.createObjectAdapterWithEndpoints(
-                "ServiceAdapter", "tcp -h localhost -p 5000"
+                "ServiceAdapter", "tcp -h  192.168.131.101 -p 5000"
             );
 
              ObjectAdapter queueAdapter = ic.createObjectAdapterWithEndpoints(
-                    "QueueAdapter", "tcp -h localhost -p 6000"
+                    "QueueAdapter", "tcp -h  192.168.131.101 -p 6000"
             );
 
 

@@ -2,7 +2,7 @@
 # The client reads this property to create the reference to the
 # "hello" object in the server.
 #
-Service.Proxy=ServiceAdapter:tcp -h localhost -p 5000
+Service.Proxy=ServiceAdapter:tcp -h 192.168.131.101 -p 5000
 
 #
 # Uncomment to use the WebSocket transports instead.
@@ -15,4 +15,4 @@ Service.Proxy=ServiceAdapter:tcp -h localhost -p 5000
 
 #Ice.Default.Host=192.168.131.119
 
-Ice.Default.Host=localhost
+Ice.Default.Host=192.168.131.102

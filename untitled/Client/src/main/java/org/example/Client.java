@@ -15,7 +15,7 @@ public class Client {
         try (Communicator ic = Util.initialize(args)) {
 
             ObjectAdapter adapter = ic.createObjectAdapterWithEndpoints(
-                "ClientAdapter", "tcp -h localhost -p 9090"
+                "ClientAdapter", "tcp -h  192.168.131.102 -p 9090"
             );
 
             ClientCallbackI cbObj = new ClientCallbackI();
@@ -25,7 +25,7 @@ public class Client {
             adapter.activate();
 
             ServicePrx service = ServicePrx.checkedCast(
-                ic.stringToProxy("service:tcp -h localhost -p 5000")
+                ic.stringToProxy("service:tcp -h 192.168.131.101 -p 5000")
             );
 
             if (service == null) {
@@ -33,21 +33,12 @@ public class Client {
             }
 
             Scanner sc = new Scanner(System.in);
-            System.out.println("¿Desea regenerar arcos?");
-            System.out.println("0 = No");
-            System.out.println("1 = Sí (recalcular desde CSV)");
-            System.out.print("Ingrese opción: ");
-            int opcion = sc.nextInt();
 
-            if (opcion == 1) {
-                service.generateArcs();
-                System.out.println("Arcos regenerados desde CSV.");
-            }
             System.out.println("¿Desea calcular velocidad promedio?");
             System.out.println("0 = No");
             System.out.println("1 = Sí");
             System.out.print("Ingrese opción: ");
-            opcion = sc.nextInt();
+            int opcion = sc.nextInt();
             
             if (opcion == 1) {
                 service.solicitarCalculoAsync(cbPrx);

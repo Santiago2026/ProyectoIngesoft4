@@ -1,9 +1,6 @@
 package org.example;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
 
 import SITM.QueueServicePrx;
@@ -34,9 +31,7 @@ public class ServiceI implements Service {
 
     @Override
     public void solicitarCalculoAsync(ClientCallbackPrx cb, Current current) {
-        System.out.println("Service → Solicitud async recibida");
-
-        long start = System.currentTimeMillis();
+        System.out.println("Service  Solicitud async recibida");
 
         if (workers.isEmpty()) {
             System.out.println("No hay workers registrados!");
@@ -44,25 +39,41 @@ public class ServiceI implements Service {
             return;
         }
 
-        // Cargar datagramas desde CSV
-        List<String> datagrama = cargarDatagramas();
+        // Lista de archivos a procesar
+        String[] archivos = {
+                "datagrams_1M.csv",
+                "datagrams_10M.csv",
+                "datagrams_100M.csv"
+        };
 
-        // Dividir los datagramas en partes para cada worker
+        for (String archivo : archivos) {
+            procesarArchivo(archivo, cb);
+        }
+
+        System.out.println("Service → Procesamiento de todos los archivos completado.");
+    }
+
+    private void procesarArchivo(String dataFile, ClientCallbackPrx cb) {
+        System.out.println("\nProcesando " + dataFile + "...");
+
+        long start = System.currentTimeMillis();
+
+        // Cargar datagrama del archivo específico
+        List<String> datagrama = cargarDatagramas(dataFile);
+
+        // Dividir datagramas por número de workers
         List<String[]> partes = dividirDatasetPorWorkers(datagrama, workers.size());
-
         List<Map<String, Double>> resultadosParciales = Collections.synchronizedList(new ArrayList<>());
         List<Thread> hilos = new ArrayList<>();
 
-        // Enviar cada parte a su worker correspondiente
         for (int i = 0; i < partes.size(); i++) {
-            int idx=i;
-
+            int idx = i;
             Thread t = new Thread(() -> {
                 try {
                     WorkerPrx worker = workers.get(idx);
                     String[] parte = partes.get(idx);
                     Map<String, Double> parcial = worker.calcularVelocidadesPorArco(parte);
-                    resultadosParciales.add(parcial);  // synchronizedList evita problemas de concurrencia
+                    resultadosParciales.add(parcial);
                 } catch (Exception e) {
                     System.out.println("Error con worker " + idx + ": " + e.getMessage());
                 }
@@ -71,25 +82,42 @@ public class ServiceI implements Service {
             t.start();
         }
 
+        // Esperar a que terminen todos los threads
         for (Thread t : hilos) {
-            try {
-                t.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            try { t.join(); } catch (InterruptedException e) { e.printStackTrace(); }
         }
 
-        // Combinar resultados parciales en un resultado final
+        // Combinar resultados parciales
         Map<String, Double> resultadoFinal = combinarVelocidades(resultadosParciales);
         cb.onFinished(serializarResultado(resultadoFinal));
 
         long end = System.currentTimeMillis();
-        System.out.println("Tiempo total de ejecución: " + (end - start) + " ms");
+        System.out.println("Tiempo total de ejecución de " + dataFile + ": " + (end - start) + " ms");
+
+        System.gc();
     }
 
-    private List<String> cargarDatagramas() {
-        List<String> res = new ArrayList<>(); 
-        try (BufferedReader br = new BufferedReader(new FileReader("datagramas.csv"))) {
+
+
+    private List<String> cargarDatagramas(String dataFile) {
+        List<String> res = new ArrayList<>();
+
+        File f = new File("config.server");
+        System.out.println("Buscando server.config en: " + f.getAbsolutePath());
+
+        Properties config = new Properties();
+        try (FileInputStream fis = new FileInputStream("config.server")) {
+            config.load(fis);
+        } catch (IOException e) {
+            System.out.println("ERROR cargando configuración: " + e.getMessage());
+            return res;
+        }
+
+        String dataDir = config.getProperty("ServiceAdapter.DataDir", ".");
+        File file = new File(dataDir, dataFile);
+        System.out.println("Buscando CSV en: " + file.getAbsolutePath());
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
                 res.add(line.trim());

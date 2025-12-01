@@ -3,15 +3,30 @@
 # "Hello". The following line sets the endpoints for this
 # adapter.
 #
-ServiceAdapter.Endpoints=tcp -h localhost -p 10000
+ServiceAdapter.Endpoints=tcp -h  192.168.131.101 -p 10000
 
 #
 # Only listen on the ZeroTier's LIASOn1 interface by default.
 #
 
-#Ice.Default.Host= localhost
+
+ServiceAdapter.DataDir=/home/swarch/proyecto-mio/MIO
+
+ServiceAdapter.Dataset.1.Name=datagrams_1M.csv
+ServiceAdapter.Dataset.1.File=datagrams_1M.csv
+
+ServiceAdapter.Dataset.2.Name=datagrams_10M.csv
+ServiceAdapter.Dataset.2.File=datagrams_10M.csv
+
+ServiceAdapter.Dataset.3.Name=datagrams_100M.csv
+ServiceAdapter.Dataset.3.File=datagrams_100M.csv
 
 
-#Ice.Default.Host=192.168.131.119
+ServiceAdapter.Dataset.4.Name=datagrams4history.csv
+ServiceAdapter.Dataset.4.File=datagrams4history.csv
+
+
+
+Ice.Default.Host=192.168.131.101
 
 
