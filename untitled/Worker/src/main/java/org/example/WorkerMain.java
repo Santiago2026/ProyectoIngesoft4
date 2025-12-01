@@ -12,14 +12,8 @@ public class WorkerMain {
     public static void main(String[] args) {
         try (Communicator ic = Util.initialize(args)) {
             System.out.println("Worker corriendo...");
-            double distanciaArcoA = 10.0; 
-            double distanciaArcoB = 15.0; 
-            Map<String, Double> distancias = Map.of(
-                "ArcoA", distanciaArcoA,
-                "ArcoB", distanciaArcoB
-            );
             ObjectAdapter adapter = ic.createObjectAdapterWithEndpoints("WorkerAdapter", "tcp -p 6003 -h localhost");
-            adapter.add(new WorkerI(distancias), Util.stringToIdentity("worker"));
+            adapter.add(new WorkerI(Map.of()), Util.stringToIdentity("worker"));
             adapter.activate();
            
             ServicePrx service = SITM.ServicePrx.checkedCast(

@@ -9,12 +9,12 @@ module SITM {
     };
 
     interface Worker {
-        Velocidades calcularVelocidadesPorArco(string chunk);
+        Velocidades calcularVelocidadesPorArco(StringList datagramas);
     };
 
     interface Service {
         void registrarWorker(Worker* w);
-        void solicitarCalculoAsync(string datagrama, ClientCallback* cb);
+        void solicitarCalculoAsync(ClientCallback* cb);
         void generateArcs();
         StringList getArcos();
     };
