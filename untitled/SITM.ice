@@ -18,4 +18,10 @@ module SITM {
         void generateArcs();
         StringList getArcos();
     };
+
+    interface QueueService {
+            void enqueue(string msg);
+            string dequeue();
+            int size();
+    };
 };

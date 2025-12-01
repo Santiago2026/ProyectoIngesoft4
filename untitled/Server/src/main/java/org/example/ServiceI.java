@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import SITM.QueueServicePrx;
 import com.zeroc.Ice.Current;
 
 import SITM.ClientCallbackPrx;
@@ -18,8 +19,9 @@ import SITM.WorkerPrx;
 
 public class ServiceI implements Service {
 
-    private final String ARC_FILE = "arcos.csv";
 
+    private final QueueServicePrx queue;
+    private final String ARC_FILE = "arcos.csv";
     private List<WorkerPrx> workers = new ArrayList<>();
     private List<String> arcs = new ArrayList<>();
 
@@ -28,8 +30,12 @@ public class ServiceI implements Service {
         System.out.println("Service → Worker registrado: " + w);
         workers.add(w);
     }
-    
-    @Override
+
+    public ServiceI(List<WorkerPrx> workers, QueueServicePrx queue) {
+        this.queue = queue;
+        this.workers = workers;
+    }
+
     public void solicitarCalculoAsync(String datagrama, ClientCallbackPrx cb, Current current) {
         System.out.println("Service → Solicitud async recibida");
 
@@ -58,6 +64,8 @@ public class ServiceI implements Service {
         Map<String, Double> resultadoFinal = combinarVelocidades(resultadosParciales);
         cb.onFinished(serializarResultado(resultadoFinal));
     }
+
+
     private List<String> dividirDatasetPorWorkers(String dataset, int numWorkers) {
         String[] lineas = dataset.split("\n");
         int total = lineas.length;
@@ -71,9 +79,6 @@ public class ServiceI implements Service {
         }
         return partes;
     }
-    public ServiceI(List<WorkerPrx> workers) {
-         this.workers = workers;
-     }
 
      private Map<String, Double> combinarVelocidades(List<Map<String, Double>> parciales) {
         Map<String, List<Double>> acumulado = new HashMap<>();
@@ -93,6 +98,8 @@ public class ServiceI implements Service {
 
         return resultadoFinal;
     }
+
+
     private String serializarResultado(Map<String, Double> resultadoFinal) {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
@@ -113,7 +120,7 @@ public class ServiceI implements Service {
     }
 
     // Generar o cargar arcos con distancias
-     @Override
+    @Override
     public void generateArcs(Current current) {
         initArcs();
         System.out.println("Service → Arcos generados o cargados.");

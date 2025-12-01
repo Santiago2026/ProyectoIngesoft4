@@ -12,7 +12,7 @@ Service.Proxy=ServiceAdapter:tcp -h localhost -p 5000
 
 # Only listen on the ZeroTier's LIASOn1 interface by default.
 #
+
 #Ice.Default.Host=192.168.131.119
 
-# Proxy al servicio del servidor
 Ice.Default.Host=localhost
